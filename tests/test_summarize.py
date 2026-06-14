@@ -20,7 +20,7 @@ def _make_raw(title="Test Article", state_media=False):
         title=title,
         link="https://example.com/1",
         source="TestSource",
-        region="英語圏",
+        tier="wire",
         state_media=state_media,
         raw_summary="This is a test article about politics.",
     )
@@ -46,7 +46,7 @@ def test_summarize_returns_article(monkeypatch):
     assert result[0].title_en == "EN Title"
     assert result[0].title_ja == "JA タイトル"
     assert result[0].source == "TestSource"
-    assert result[0].region == "英語圏"
+    assert result[0].tier == "wire"
 
 def test_summarize_falls_back_on_api_error(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")

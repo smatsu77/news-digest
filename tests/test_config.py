@@ -2,22 +2,22 @@ import os
 import pytest
 from config import (
     Source, RawArticle, Article,
-    SOURCES, REGIONS, CATEGORIES, CATEGORY_KEYWORDS,
+    SOURCES, TIERS, TIER_LABELS, CATEGORIES, CATEGORY_KEYWORDS,
     classify_category, get_env,
 )
 
 def test_sources_have_required_fields():
     for s in SOURCES:
-        assert s.name and s.region and s.url
-        assert s.region in REGIONS
+        assert s.name
+        assert s.tier in TIERS
+        # url can be empty string (AFP), but must not be None
+        assert s.url is not None
 
 def test_state_media_sources():
     state_media = [s for s in SOURCES if s.state_media]
     names = {s.name for s in state_media}
-    assert "Xinhua" in names
-    assert "TASS" in names
-    assert "RT" in names
-    assert "Global Times" in names
+    assert "Xinhua/CGTN" in names
+    assert "TASS/RT" in names
     bbc = next(s for s in SOURCES if s.name == "BBC")
     assert not bbc.state_media
 

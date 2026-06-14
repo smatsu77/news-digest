@@ -25,30 +25,35 @@ def _make_feed(entries=None, bozo=False):
 
 def test_fetch_source_returns_articles(mocker):
     mocker.patch("feedparser.parse", return_value=_make_feed())
-    source = Source("TestSource", "英語圏", "https://example.com/rss.xml")
+    source = Source("TestSource", "wire", "https://example.com/rss.xml")
     result = fetch_source(source)
     assert len(result) == 1
     assert result[0].title == "Test Headline"
     assert result[0].source == "TestSource"
-    assert result[0].region == "英語圏"
+    assert result[0].tier == "wire"
     assert not result[0].state_media
+
+def test_fetch_source_skips_empty_url():
+    source = Source("AFP", "wire", "")
+    result = fetch_source(source)
+    assert result == []
 
 def test_fetch_source_state_media_flag(mocker):
     mocker.patch("feedparser.parse", return_value=_make_feed())
-    source = Source("TASS", "ロシア", "https://tass.com/rss/v2.xml", state_media=True)
+    source = Source("TASS/RT", "state", "https://tass.com/rss/v2.xml", state_media=True)
     result = fetch_source(source)
     assert result[0].state_media is True
 
 def test_fetch_source_empty_feed_returns_empty(mocker):
     feed = _make_feed(entries=[])
     mocker.patch("feedparser.parse", return_value=feed)
-    source = Source("Dead", "英語圏", "https://dead.example.com/rss")
+    source = Source("Dead", "wire", "https://dead.example.com/rss")
     result = fetch_source(source)
     assert result == []
 
 def test_fetch_source_exception_returns_empty(mocker):
     mocker.patch("feedparser.parse", side_effect=Exception("timeout"))
-    source = Source("Broken", "英語圏", "https://broken.example.com/rss")
+    source = Source("Broken", "wire", "https://broken.example.com/rss")
     result = fetch_source(source)  # must not raise
     assert result == []
 
@@ -59,7 +64,7 @@ def test_fetch_source_respects_max_items(mocker):
         mock_entry.get = lambda key, default="", m=MOCK_ENTRY: m.get(key, default)
         entries.append(mock_entry)
     mocker.patch("feedparser.parse", return_value=_make_feed(entries=entries))
-    source = Source("Big", "英語圏", "https://big.example.com/rss")
+    source = Source("Big", "wire", "https://big.example.com/rss")
     result = fetch_source(source)
     assert len(result) <= 10
 
@@ -67,8 +72,8 @@ def test_fetch_all_skips_failed_source(mocker):
     good_feed = _make_feed()
     bad_feed = _make_feed(entries=[])
     sources = [
-        Source("Good", "英語圏", "https://good.com/rss"),
-        Source("Bad",  "英語圏", "https://bad.com/rss"),
+        Source("Good", "wire", "https://good.com/rss"),
+        Source("Bad",  "wire", "https://bad.com/rss"),
     ]
     mocker.patch("feedparser.parse", side_effect=[good_feed, bad_feed])
     result = fetch_all(sources)

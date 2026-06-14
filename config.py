@@ -6,7 +6,7 @@ import os
 @dataclass
 class Source:
     name: str
-    region: str
+    tier: str        # was: region
     url: str
     state_media: bool = False
 
@@ -15,7 +15,7 @@ class RawArticle:
     title: str
     link: str
     source: str
-    region: str
+    tier: str        # was: region
     state_media: bool
     raw_summary: str = ""
     published: str = ""
@@ -27,42 +27,48 @@ class Article:
     summary_en: str
     summary_ja: str
     source: str
-    region: str
+    tier: str        # was: region
     link: str
     state_media: bool
     category: str
     published: str = ""
 
+TIERS = ["wire", "public", "paper", "state"]
+
+TIER_LABELS = {
+    "wire":   "通信社",
+    "public": "公共放送",
+    "paper":  "民間紙",
+    "state":  "国営メディア",
+}
+
 SOURCES: list[Source] = [
-    # 英語圏
-    Source("BBC",         "英語圏", "https://feeds.bbci.co.uk/news/rss.xml"),
-    Source("CNN",         "英語圏", "http://rss.cnn.com/rss/edition.rss"),
-    Source("ABC News AU", "英語圏", "https://www.abc.net.au/news/feed/51120/rss.xml"),
-    # 韓国
-    Source("Yonhap",      "韓国", "https://en.yna.co.kr/RSS/news.xml"),
-    Source("Chosun Ilbo", "韓国", "https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml"),
-    Source("Hankyoreh",   "韓国", "https://english.hani.co.kr/rss/"),
-    # 台湾
-    Source("Ketagalan Media", "台湾", "https://ketagalanmedia.com/feed/"),
-    Source("Taipei Times", "台湾", "https://www.taipeitimes.com/xml/index.rss"),
-    # 中国
-    Source("Xinhua",       "中国", "http://www.xinhuanet.com/english/rss/worldrss.xml", state_media=True),
-    Source("Global Times", "中国", "https://www.globaltimes.cn/rss/outbrain.xml", state_media=True),
-    Source("SCMP",         "中国", "https://www.scmp.com/rss/91/feed"),
-    # 中東
-    Source("Al Jazeera",     "中東", "https://www.aljazeera.com/xml/rss/all.xml"),
-    Source("Daily Sabah",    "中東", "https://www.dailysabah.com/rss/middle-east"),
-    Source("Middle East Eye","中東", "https://www.middleeasteye.net/rss"),
-    # ロシア
-    Source("TASS",         "ロシア", "https://tass.com/rss/v2.xml", state_media=True),
-    Source("Moscow Times", "ロシア", "https://www.themoscowtimes.com/rss/news"),
-    Source("RT",           "ロシア", "https://www.rt.com/rss/news/", state_media=True),
-    # ブラジル
-    Source("Folha de São Paulo", "ブラジル", "https://feeds.folha.uol.com.br/folha/mundo/rss091.xml"),
-    Source("G1 Globo",           "ブラジル", "https://g1.globo.com/rss/g1/"),
+    # 通信社
+    Source("Reuters",       "wire",   "https://news.google.com/rss/search?q=site:reuters.com+world&hl=en"),
+    Source("AP",            "wire",   "https://news.google.com/rss/search?q=site:apnews.com&hl=en"),
+    Source("AFP",           "wire",   ""),  # No public RSS; graceful skip
+    # 公共放送
+    Source("BBC",           "public", "https://feeds.bbci.co.uk/news/world/rss.xml"),
+    Source("Deutsche Welle","public", "https://rss.dw.com/rdf/rss-en-all"),
+    # 民間紙
+    Source("New York Times","paper",  "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
+    Source("Wall Street Journal", "paper", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
+    Source("The Guardian",  "paper",  "https://www.theguardian.com/world/rss"),
+    Source("The Economist", "paper",  "https://www.economist.com/international/rss.xml"),
+    Source("Le Monde",      "paper",  "https://www.lemonde.fr/en/rss/une.xml"),
+    Source("Al Jazeera",    "paper",  "https://www.aljazeera.com/xml/rss/all.xml"),
+    Source("Haaretz",       "paper",  "https://news.google.com/rss/search?q=site:haaretz.com&hl=en"),
+    Source("The Straits Times", "paper", "https://www.straitstimes.com/rss.xml"),
+    Source("The Jakarta Post",  "paper", "https://news.google.com/rss/search?q=site:thejakartapost.com&hl=en"),
+    Source("The Hindu",     "paper",  "https://www.thehindu.com/news/international/feeder/default.rss"),
+    Source("Focus Taiwan",  "paper",  "https://news.google.com/rss/search?q=site:focustaiwan.tw&hl=en"),
+    Source("Folha de S.Paulo", "paper", "https://feeds.folha.uol.com.br/internacional/en/world/rss091.xml"),
+    Source("Premium Times", "paper",  "https://www.premiumtimesng.com/feed"),
+    # 国営
+    Source("Xinhua/CGTN",   "state",  "https://www.cgtn.com/subscribe/rss/section/world.xml", state_media=True),
+    Source("TASS/RT",       "state",  "https://tass.com/rss/v2.xml", state_media=True),
 ]
 
-REGIONS = ["英語圏", "韓国", "台湾", "中国", "中東", "ロシア", "ブラジル"]
 CATEGORIES = ["政治", "経済", "IT", "社会"]
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {

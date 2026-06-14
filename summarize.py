@@ -15,7 +15,7 @@ def _build_prompt(raw: RawArticle) -> str:
     ) if raw.state_media else ""
     return (
         f"You are a bilingual news editor. Output ONLY valid JSON, no markdown fences.\n\n"
-        f"Source: {raw.source} (region: {raw.region}){state_note}\n"
+        f"Source: {raw.source} (tier: {raw.tier}){state_note}\n"
         f"Title: {raw.title}\n"
         f"Excerpt: {raw.raw_summary[:600]}\n\n"
         f"Required JSON:\n"
@@ -49,7 +49,7 @@ def summarize_articles(
                 summary_en=data["summary_en"],
                 summary_ja=data["summary_ja"],
                 source=raw.source,
-                region=raw.region,
+                tier=raw.tier,
                 link=raw.link,
                 state_media=raw.state_media,
                 category=category,
@@ -63,7 +63,7 @@ def summarize_articles(
                 summary_en=raw.raw_summary[:300],
                 summary_ja=raw.raw_summary[:300],
                 source=raw.source,
-                region=raw.region,
+                tier=raw.tier,
                 link=raw.link,
                 state_media=raw.state_media,
                 category=category,

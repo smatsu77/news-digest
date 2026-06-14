@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from typing import List
 import requests
-from config import Article, REGIONS, get_env
+from config import Article, TIERS, TIER_LABELS, get_env
 
 logger = logging.getLogger(__name__)
 _MAX_BYTES = 3800
@@ -10,12 +10,13 @@ _TOP_PER_REGION = 2
 
 def build_message(articles: List[Article]) -> str:
     lines = ["[Morning Read]\n"]
-    for region in REGIONS:
-        region_arts = [a for a in articles if a.region == region]
-        if not region_arts:
+    for tier in TIERS:
+        tier_arts = [a for a in articles if a.tier == tier]
+        if not tier_arts:
             continue
-        lines.append(f"\n[{region}]")
-        for art in region_arts[:_TOP_PER_REGION]:
+        label = TIER_LABELS.get(tier, tier)
+        lines.append(f"\n[{label}]")
+        for art in tier_arts[:_TOP_PER_REGION]:
             prefix = "[!]" if art.state_media else "-"
             lines.append(f"{prefix} {art.title_en}")
     msg = "\n".join(lines)

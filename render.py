@@ -3,7 +3,7 @@ import html as _html
 from datetime import datetime
 from pathlib import Path
 from typing import List
-from config import Article, REGIONS, CATEGORIES
+from config import Article, TIERS, TIER_LABELS, CATEGORIES
 
 _TEMPLATE = """\
 <!DOCTYPE html>
@@ -68,19 +68,20 @@ def _article_html(art: Article) -> str:
     )
 
 def render_html(articles: List[Article], date_str: str) -> str:
-    by_region: dict[str, dict[str, list[Article]]] = {
-        r: {c: [] for c in CATEGORIES} for r in REGIONS
+    by_tier: dict[str, dict[str, list[Article]]] = {
+        t: {c: [] for c in CATEGORIES} for t in TIERS
     }
     for art in articles:
-        if art.region in by_region and art.category in by_region[art.region]:
-            by_region[art.region][art.category].append(art)
+        if art.tier in by_tier and art.category in by_tier[art.tier]:
+            by_tier[art.tier][art.category].append(art)
 
     parts: list[str] = []
-    for region in REGIONS:
-        cats = by_region[region]
+    for tier in TIERS:
+        cats = by_tier[tier]
         if not any(cats.values()):
             continue
-        parts.append(f'<div class="region"><h2>{_e(region)}</h2>')
+        label = TIER_LABELS.get(tier, tier)
+        parts.append(f'<div class="region"><h2>{_e(label)}</h2>')
         for cat in CATEGORIES:
             arts = cats[cat]
             if not arts:

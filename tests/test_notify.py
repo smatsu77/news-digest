@@ -3,21 +3,21 @@ from unittest.mock import patch, MagicMock
 from config import Article
 from notify import build_message, send_notification
 
-def _art(region="英語圏", title_en="Headline", state_media=False):
+def _art(tier="wire", title_en="Headline", state_media=False):
     return Article(
         title_en=title_en, title_ja="見出し",
         summary_en="Summary.", summary_ja="要約。",
-        source="BBC", region=region,
-        link="https://bbc.com/1",
+        source="Reuters", tier=tier,
+        link="https://reuters.com/1",
         state_media=state_media,
         category="政治",
     )
 
-def test_build_message_contains_regions():
-    arts = [_art("英語圏"), _art("韓国")]
+def test_build_message_contains_tier_labels():
+    arts = [_art("wire"), _art("public")]
     msg = build_message(arts)
-    assert "英語圏" in msg
-    assert "韓国" in msg
+    assert "通信社" in msg
+    assert "公共放送" in msg
 
 def test_build_message_contains_headline():
     arts = [_art(title_en="Big News Today")]

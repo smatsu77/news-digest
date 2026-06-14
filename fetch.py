@@ -9,6 +9,9 @@ MAX_ITEMS_PER_SOURCE = 10
 
 def fetch_source(source: Source) -> List[RawArticle]:
     """Fetch one RSS source. Returns [] on any failure (graceful skip)."""
+    if not source.url:          # AFP and any future no-RSS source
+        logger.info(f"[{source.name}] No RSS URL configured, skipping")
+        return []
     try:
         feed = feedparser.parse(source.url)
         if not feed.entries:
@@ -23,7 +26,7 @@ def fetch_source(source: Source) -> List[RawArticle]:
                 title=title,
                 link=entry.get("link", ""),
                 source=source.name,
-                region=source.region,
+                tier=source.tier,
                 state_media=source.state_media,
                 raw_summary=(entry.get("summary") or entry.get("description") or "")[:1000],
                 published=entry.get("published", ""),
@@ -50,10 +53,12 @@ if __name__ == "__main__":
         items = fetch_source(source)
         flag = " [STATE MEDIA]" if source.state_media else ""
         if items:
-            print(f"  [OK]  [{source.region}] {source.name}{flag}: {len(items)} items")
+            print(f"  [OK]  [{source.tier}] {source.name}{flag}: {len(items)} items")
             ok.append(source.name)
+        elif not source.url:
+            print(f"  [--]  [{source.tier}] {source.name}{flag}: no URL, skipped")
         else:
-            print(f"  [NG]  [{source.region}] {source.name}{flag}: FAILED")
+            print(f"  [NG]  [{source.tier}] {source.name}{flag}: FAILED")
             fail.append(source.name)
     print(f"\nResult: {len(ok)} OK / {len(fail)} FAILED")
     if fail:
