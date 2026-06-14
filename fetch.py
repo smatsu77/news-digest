@@ -1,0 +1,60 @@
+from __future__ import annotations
+import logging
+from typing import List
+import feedparser
+from config import Source, RawArticle, SOURCES
+
+logger = logging.getLogger(__name__)
+MAX_ITEMS_PER_SOURCE = 10
+
+def fetch_source(source: Source) -> List[RawArticle]:
+    """Fetch one RSS source. Returns [] on any failure (graceful skip)."""
+    try:
+        feed = feedparser.parse(source.url)
+        if not feed.entries:
+            logger.warning(f"[{source.name}] No entries (bozo={feed.bozo})")
+            return []
+        articles = []
+        for entry in feed.entries[:MAX_ITEMS_PER_SOURCE]:
+            title = entry.get("title", "").strip()
+            if not title:
+                continue
+            articles.append(RawArticle(
+                title=title,
+                link=entry.get("link", ""),
+                source=source.name,
+                region=source.region,
+                state_media=source.state_media,
+                raw_summary=(entry.get("summary") or entry.get("description") or "")[:1000],
+                published=entry.get("published", ""),
+            ))
+        return articles
+    except Exception as exc:
+        logger.warning(f"[{source.name}] Fetch error: {exc}")
+        return []
+
+def fetch_all(sources: List[Source] = SOURCES) -> List[RawArticle]:
+    results: List[RawArticle] = []
+    for source in sources:
+        items = fetch_source(source)
+        logger.info(f"[{source.name}] fetched {len(items)} items")
+        results.extend(items)
+    return results
+
+if __name__ == "__main__":
+    """CLI validation mode: python fetch.py"""
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    print("=== RSS URL Validation ===\n")
+    ok, fail = [], []
+    for source in SOURCES:
+        items = fetch_source(source)
+        flag = " [STATE MEDIA]" if source.state_media else ""
+        if items:
+            print(f"  ✓  [{source.region}] {source.name}{flag}: {len(items)} items")
+            ok.append(source.name)
+        else:
+            print(f"  ✗  [{source.region}] {source.name}{flag}: FAILED")
+            fail.append(source.name)
+    print(f"\nResult: {len(ok)} OK / {len(fail)} FAILED")
+    if fail:
+        print(f"Failed sources: {fail}")
