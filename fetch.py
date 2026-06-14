@@ -50,10 +50,10 @@ if __name__ == "__main__":
         items = fetch_source(source)
         flag = " [STATE MEDIA]" if source.state_media else ""
         if items:
-            print(f"  ✓  [{source.region}] {source.name}{flag}: {len(items)} items")
+            print(f"  [OK]  [{source.region}] {source.name}{flag}: {len(items)} items")
             ok.append(source.name)
         else:
-            print(f"  ✗  [{source.region}] {source.name}{flag}: FAILED")
+            print(f"  [NG]  [{source.region}] {source.name}{flag}: FAILED")
             fail.append(source.name)
     print(f"\nResult: {len(ok)} OK / {len(fail)} FAILED")
     if fail:
