@@ -40,25 +40,25 @@ SOURCES: list[Source] = [
     Source("ABC News AU", "英語圏", "https://www.abc.net.au/news/feed/51120/rss.xml"),
     # 韓国
     Source("Yonhap",      "韓国", "https://en.yna.co.kr/RSS/news.xml"),
-    Source("Chosun Ilbo", "韓国", "https://www.chosun.com/arc/outboundfeeds/rss/category/english/?outputType=xml"),
+    Source("Chosun Ilbo", "韓国", "https://www.chosun.com/arc/outboundfeeds/rss/?outputType=xml"),
     Source("Hankyoreh",   "韓国", "https://english.hani.co.kr/rss/"),
     # 台湾
-    Source("Focus Taiwan", "台湾", "https://focustaiwan.tw/rss"),
+    Source("Ketagalan Media", "台湾", "https://ketagalanmedia.com/feed/"),
     Source("Taipei Times", "台湾", "https://www.taipeitimes.com/xml/index.rss"),
     # 中国
-    Source("Xinhua",       "中国", "https://english.news.cn/rss/world.xml", state_media=True),
+    Source("Xinhua",       "中国", "http://www.xinhuanet.com/english/rss/worldrss.xml", state_media=True),
     Source("Global Times", "中国", "https://www.globaltimes.cn/rss/outbrain.xml", state_media=True),
     Source("SCMP",         "中国", "https://www.scmp.com/rss/91/feed"),
     # 中東
     Source("Al Jazeera",     "中東", "https://www.aljazeera.com/xml/rss/all.xml"),
-    Source("Al Arabiya",     "中東", "https://english.alarabiya.net/rss.xml"),
+    Source("Daily Sabah",    "中東", "https://www.dailysabah.com/rss/middle-east"),
     Source("Middle East Eye","中東", "https://www.middleeasteye.net/rss"),
     # ロシア
     Source("TASS",         "ロシア", "https://tass.com/rss/v2.xml", state_media=True),
     Source("Moscow Times", "ロシア", "https://www.themoscowtimes.com/rss/news"),
     Source("RT",           "ロシア", "https://www.rt.com/rss/news/", state_media=True),
     # ブラジル
-    Source("Folha de São Paulo", "ブラジル", "https://feeds.folha.uol.com.br/emcimadahora/rss091.xml"),
+    Source("Folha de São Paulo", "ブラジル", "https://feeds.folha.uol.com.br/folha/mundo/rss091.xml"),
     Source("G1 Globo",           "ブラジル", "https://g1.globo.com/rss/g1/"),
 ]
 
