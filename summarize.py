@@ -38,7 +38,7 @@ def summarize_articles(
         category = classify_category(raw.title, raw.raw_summary)
         try:
             response = client.messages.create(
-                model="claude-opus-4-8",
+                model="claude-sonnet-4-6",
                 max_tokens=500,
                 messages=[{"role": "user", "content": _build_prompt(raw)}],
             )

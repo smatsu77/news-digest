@@ -1,8 +1,19 @@
 from __future__ import annotations
 import logging
+import re
 from typing import List
 import feedparser
 from config import Source, RawArticle, SOURCES
+
+def _strip_html(text: str) -> str:
+    """Remove HTML tags and decode common entities."""
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = re.sub(r'&nbsp;', ' ', text)
+    text = re.sub(r'&amp;', '&', text)
+    text = re.sub(r'&lt;', '<', text)
+    text = re.sub(r'&gt;', '>', text)
+    text = re.sub(r'&quot;', '"', text)
+    return re.sub(r'\s+', ' ', text).strip()
 
 logger = logging.getLogger(__name__)
 MAX_ITEMS_PER_SOURCE = 10
@@ -28,7 +39,7 @@ def fetch_source(source: Source) -> List[RawArticle]:
                 source=source.name,
                 tier=source.tier,
                 state_media=source.state_media,
-                raw_summary=(entry.get("summary") or entry.get("description") or "")[:1000],
+                raw_summary=_strip_html((entry.get("summary") or entry.get("description") or ""))[:1000],
                 published=entry.get("published", ""),
             ))
         return articles
