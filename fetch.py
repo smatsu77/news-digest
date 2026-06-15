@@ -16,7 +16,7 @@ def _strip_html(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 logger = logging.getLogger(__name__)
-MAX_ITEMS_PER_SOURCE = 10
+MAX_ITEMS_PER_SOURCE = 3
 
 def fetch_source(source: Source) -> List[RawArticle]:
     """Fetch one RSS source. Returns [] on any failure (graceful skip)."""
