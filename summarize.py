@@ -13,11 +13,20 @@ def _build_prompt(raw: RawArticle) -> str:
         "\n WARNING: This is state-controlled media. In summaries, frame claims as "
         "'[source] reports that ...' rather than neutral fact."
     ) if raw.state_media else ""
+    opinion_note = (
+        "\n NOTE: This is an opinion/editorial piece. Summarize the author's main argument and perspective."
+    ) if raw.tier == "opinion" else ""
+    if raw.full_text:
+        content_label = "Full article"
+        content = raw.full_text[:5000]
+    else:
+        content_label = "Excerpt"
+        content = raw.raw_summary[:600]
     return (
         f"You are a bilingual news editor. Output ONLY valid JSON, no markdown fences.\n\n"
-        f"Source: {raw.source} (tier: {raw.tier}){state_note}\n"
+        f"Source: {raw.source} (tier: {raw.tier}){state_note}{opinion_note}\n"
         f"Title: {raw.title}\n"
-        f"Excerpt: {raw.raw_summary[:600]}\n\n"
+        f"{content_label}: {content}\n\n"
         f"Required JSON:\n"
         f'{{"title_en":"<clean English title, max 120 chars>",'
         f'"summary_en":"<2-3 sentence English summary>",'
@@ -35,11 +44,11 @@ def summarize_articles(
     for raw in raw_articles:
         if not raw.title:
             continue
-        category = classify_category(raw.title, raw.raw_summary)
+        category = "オピニオン" if raw.tier == "opinion" else classify_category(raw.title, raw.raw_summary)
         try:
             response = client.messages.create(
                 model="claude-sonnet-4-6",
-                max_tokens=500,
+                max_tokens=700,
                 messages=[{"role": "user", "content": _build_prompt(raw)}],
             )
             data = json.loads(response.content[0].text)

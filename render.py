@@ -82,7 +82,7 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
 </div>
 <div class="footer" id="footer"></div>
 <script>
-const CATS = ["全て","政治","経済","IT","社会"];
+const CATS = ["全て","政治","経済","IT","社会","オピニオン"];
 const DATA = {data_json};
 let curCat = "全て";
 

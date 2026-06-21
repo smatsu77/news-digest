@@ -25,6 +25,7 @@ def _make_feed(entries=None, bozo=False):
 
 def test_fetch_source_returns_articles(mocker):
     mocker.patch("feedparser.parse", return_value=_make_feed())
+    mocker.patch("fetch._fetch_full_text", return_value="")
     source = Source("TestSource", "wire", "https://example.com/rss.xml")
     result = fetch_source(source)
     assert len(result) == 1
@@ -40,6 +41,7 @@ def test_fetch_source_skips_empty_url():
 
 def test_fetch_source_state_media_flag(mocker):
     mocker.patch("feedparser.parse", return_value=_make_feed())
+    mocker.patch("fetch._fetch_full_text", return_value="")
     source = Source("TASS/RT", "state", "https://tass.com/rss/v2.xml", state_media=True)
     result = fetch_source(source)
     assert result[0].state_media is True
@@ -64,9 +66,17 @@ def test_fetch_source_respects_max_items(mocker):
         mock_entry.get = lambda key, default="", m=MOCK_ENTRY: m.get(key, default)
         entries.append(mock_entry)
     mocker.patch("feedparser.parse", return_value=_make_feed(entries=entries))
+    mocker.patch("fetch._fetch_full_text", return_value="")
     source = Source("Big", "wire", "https://big.example.com/rss")
     result = fetch_source(source)
     assert len(result) <= 10
+
+def test_fetch_source_full_text_stored(mocker):
+    mocker.patch("feedparser.parse", return_value=_make_feed())
+    mocker.patch("fetch._fetch_full_text", return_value="Full article body text here.")
+    source = Source("TestSource", "wire", "https://example.com/rss.xml")
+    result = fetch_source(source)
+    assert result[0].full_text == "Full article body text here."
 
 def test_fetch_all_skips_failed_source(mocker):
     good_feed = _make_feed()
@@ -76,6 +86,7 @@ def test_fetch_all_skips_failed_source(mocker):
         Source("Bad",  "wire", "https://bad.com/rss"),
     ]
     mocker.patch("feedparser.parse", side_effect=[good_feed, bad_feed])
+    mocker.patch("fetch._fetch_full_text", return_value="")
     result = fetch_all(sources)
     assert len(result) == 1
     assert result[0].source == "Good"

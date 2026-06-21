@@ -18,6 +18,7 @@ class RawArticle:
     tier: str        # was: region
     state_media: bool
     raw_summary: str = ""
+    full_text: str = ""   # full article body if successfully fetched
     published: str = ""
 
 @dataclass
@@ -33,13 +34,14 @@ class Article:
     category: str
     published: str = ""
 
-TIERS = ["wire", "public", "paper", "state"]
+TIERS = ["wire", "public", "paper", "opinion", "state"]
 
 TIER_LABELS = {
-    "wire":   "通信社",
-    "public": "公共放送",
-    "paper":  "民間紙",
-    "state":  "国営メディア",
+    "wire":    "通信社",
+    "public":  "公共放送",
+    "paper":   "民間紙",
+    "opinion": "オピニオン",
+    "state":   "国営メディア",
 }
 
 SOURCES: list[Source] = [
@@ -67,9 +69,13 @@ SOURCES: list[Source] = [
     # 国営
     Source("Xinhua/CGTN",   "state",  "https://www.cgtn.com/subscribe/rss/section/world.xml", state_media=True),
     Source("TASS/RT",       "state",  "https://tass.com/rss/v2.xml", state_media=True),
+    # オピニオン
+    Source("Project Syndicate", "opinion", "https://www.project-syndicate.org/rss"),
+    Source("Guardian Opinion",  "opinion", "https://www.theguardian.com/commentisfree/rss"),
+    Source("Foreign Affairs",   "opinion", "https://www.foreignaffairs.com/rss.xml"),
 ]
 
-CATEGORIES = ["政治", "経済", "IT", "社会"]
+CATEGORIES = ["政治", "経済", "IT", "社会", "オピニオン"]
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "政治": ["politi", "government", "election", "president", "prime minister", "parliament",

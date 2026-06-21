@@ -32,6 +32,7 @@ def test_render_html_contains_category_tab():
     assert "IT" in html
     assert "社会" in html
     assert "全て" in html
+    assert "オピニオン" in html
 
 def test_render_html_state_media_badge():
     html = render_html([_make_article(state_media=True)], "2026-06-14")

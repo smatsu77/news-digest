@@ -15,6 +15,27 @@ def _strip_html(text: str) -> str:
     text = re.sub(r'&quot;', '"', text)
     return re.sub(r'\s+', ' ', text).strip()
 
+def _fetch_full_text(url: str, timeout: int = 10) -> str:
+    """Try to fetch full article body via trafilatura. Returns '' if blocked/paywalled."""
+    if not url:
+        return ""
+    try:
+        import trafilatura
+        html = trafilatura.fetch_url(url, no_ssl=False)
+        if not html:
+            return ""
+        text = trafilatura.extract(
+            html,
+            include_comments=False,
+            include_tables=False,
+            no_fallback=False,
+        )
+        if not text or len(text) < 100:
+            return ""
+        return text[:5000]
+    except Exception:
+        return ""
+
 logger = logging.getLogger(__name__)
 MAX_ITEMS_PER_SOURCE = 3
 
@@ -33,13 +54,18 @@ def fetch_source(source: Source) -> List[RawArticle]:
             title = entry.get("title", "").strip()
             if not title:
                 continue
+            link = entry.get("link", "")
+            full_text = _fetch_full_text(link)
+            if full_text:
+                logger.info(f"[{source.name}] Full text fetched ({len(full_text)} chars): {title[:40]}")
             articles.append(RawArticle(
                 title=title,
-                link=entry.get("link", ""),
+                link=link,
                 source=source.name,
                 tier=source.tier,
                 state_media=source.state_media,
                 raw_summary=_strip_html((entry.get("summary") or entry.get("description") or ""))[:1000],
+                full_text=full_text,
                 published=entry.get("published", ""),
             ))
         return articles
