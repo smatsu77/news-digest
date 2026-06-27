@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 import os
 
@@ -33,6 +33,9 @@ class Article:
     state_media: bool
     category: str
     published: str = ""
+    full_text: str = ""           # original English full text (if fetched)
+    translation_ja: str = ""      # full Japanese translation
+    vocab: list = field(default_factory=list)  # difficult words [{word, definition}]
 
 TIERS = ["wire", "public", "paper", "opinion", "state"]
 

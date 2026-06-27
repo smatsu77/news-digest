@@ -57,6 +57,17 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
 .detail-title-en{{font-size:.9rem;font-weight:bold;line-height:1.4;color:#bbb;margin-bottom:.5rem}}
 .detail-summ-en{{font-size:.82rem;line-height:1.6;color:var(--muted)}}
 .detail-source{{font-size:.72rem;color:var(--muted);margin-top:.75rem}}
+/* Full text sections */
+.section-label{{font-size:.78rem;color:var(--accent);font-weight:bold;
+                letter-spacing:.05em;margin-bottom:.5rem;margin-top:.25rem}}
+.detail-fulltext-en{{font-size:.82rem;line-height:1.8;color:var(--muted);
+                     white-space:pre-wrap;word-break:break-word}}
+.detail-translation{{font-size:.88rem;line-height:1.8;color:#ccc;
+                     white-space:pre-wrap;word-break:break-word}}
+/* Vocab */
+.vocab-item{{margin-bottom:.75rem}}
+.vocab-word{{font-weight:bold;color:var(--accent);font-size:.88rem;display:block}}
+.vocab-def{{font-size:.82rem;color:#ccc;line-height:1.6}}
 /* Footer */
 .footer{{font-size:.68rem;color:var(--muted);text-align:center;padding:1.5rem 1rem;
          border-top:1px solid var(--border)}}
@@ -78,6 +89,19 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
   <hr class="divider">
   <div class="detail-title-en" id="d-title-en"></div>
   <div class="detail-summ-en" id="d-summ-en"></div>
+  <div id="d-fulltext-section" style="display:none">
+    <hr class="divider">
+    <div class="section-label">全文（英語）</div>
+    <div class="detail-fulltext-en" id="d-fulltext-en"></div>
+    <hr class="divider">
+    <div class="section-label">日本語訳（全文）</div>
+    <div class="detail-translation" id="d-translation-ja"></div>
+  </div>
+  <div id="d-vocab-section" style="display:none">
+    <hr class="divider">
+    <div class="section-label">難単語（TOEIC 800+）</div>
+    <div id="d-vocab-list"></div>
+  </div>
   <div class="detail-source" id="d-source"></div>
 </div>
 <div class="footer" id="footer"></div>
@@ -116,12 +140,24 @@ function setCat(cat){{curCat=cat;renderTabs();renderList();document.getElementBy
 function showDetail(idx){{
   const a=filteredArts()[idx];
   document.getElementById("d-link").href=a.link;
-  const sb=document.getElementById("d-state");
-  sb.style.display=a.state_media?"block":"none";
+  document.getElementById("d-state").style.display=a.state_media?"block":"none";
   document.getElementById("d-title-ja").textContent=a.title_ja;
   document.getElementById("d-summ-ja").textContent=a.summary_ja;
   document.getElementById("d-title-en").textContent=a.title_en;
   document.getElementById("d-summ-en").textContent=a.summary_en;
+  const fts=document.getElementById("d-fulltext-section");
+  if(a.full_text){{
+    document.getElementById("d-fulltext-en").textContent=a.full_text;
+    document.getElementById("d-translation-ja").textContent=a.translation_ja||"";
+    fts.style.display="block";
+  }}else{{fts.style.display="none";}}
+  const vs=document.getElementById("d-vocab-section");
+  if(a.vocab&&a.vocab.length){{
+    document.getElementById("d-vocab-list").innerHTML=a.vocab.map(v=>
+      `<div class="vocab-item"><span class="vocab-word">${{esc(v.word)}}</span><span class="vocab-def">${{esc(v.definition)}}</span></div>`
+    ).join("");
+    vs.style.display="block";
+  }}else{{vs.style.display="none";}}
   document.getElementById("d-source").textContent=a.source+" / "+a.tier;
   document.getElementById("list-view").style.display="none";
   document.getElementById("detail-view").style.display="block";
@@ -148,6 +184,9 @@ def _safe_json(articles: List[Article]) -> str:
             "link": a.link,
             "state_media": a.state_media,
             "category": a.category,
+            "full_text": a.full_text,
+            "translation_ja": a.translation_ja,
+            "vocab": a.vocab,
         }
         for a in articles
     ]
