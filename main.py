@@ -47,7 +47,8 @@ def main() -> None:
 
     logger.info("=== 3/5 Rendering HTML ===")
     docs_dir = Path(__file__).parent / "docs"
-    dated_path, latest_path = write_html(articles, docs_dir)
+    ntfy_topic = get_env("NTFY_TOPIC", required=False) or ""
+    dated_path, latest_path = write_html(articles, docs_dir, ntfy_topic=ntfy_topic)
     logger.info(f"HTML: {dated_path.name}, {latest_path.name}")
 
     logger.info("=== 4/5 Git commit & push ===")

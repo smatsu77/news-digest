@@ -68,6 +68,19 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
 .vocab-item{{margin-bottom:.75rem}}
 .vocab-word{{font-weight:bold;color:var(--accent);font-size:.88rem;display:block}}
 .vocab-def{{font-size:.82rem;color:#ccc;line-height:1.6}}
+/* Share */
+.share-btn{{display:inline-flex;align-items:center;gap:.3rem;background:none;
+           border:1px solid var(--accent);color:var(--accent);border-radius:4px;
+           padding:.3rem .75rem;font-size:.78rem;cursor:pointer;margin-left:.75rem}}
+.share-btn:active{{opacity:.7}}
+.share-block{{background:var(--card);border:1px solid var(--border);border-radius:6px;
+             padding:1rem;margin:.75rem 1rem}}
+.share-title{{font-size:.85rem;font-weight:bold;color:var(--accent);margin-bottom:.4rem}}
+.share-desc{{font-size:.78rem;color:var(--muted);margin-bottom:.5rem;line-height:1.5}}
+.share-topic{{font-size:.8rem;color:#ccc;margin-bottom:.5rem}}
+.share-topic code{{background:#111;padding:.1rem .4rem;border-radius:3px;
+                   color:var(--accent);font-family:monospace}}
+.share-link{{display:inline-block;font-size:.8rem;color:var(--accent);text-decoration:none}}
 /* Footer */
 .footer{{font-size:.68rem;color:var(--muted);text-align:center;padding:1.5rem 1rem;
          border-top:1px solid var(--border)}}
@@ -76,7 +89,10 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
 <body>
 <div class="header">
   <h1>Morning Read</h1>
-  <div class="date">{date}</div>
+  <div style="display:flex;align-items:center;margin-top:.2rem">
+    <div class="date">{date}</div>
+    <button class="share-btn" onclick="shareUrl()">&#128279; 共有</button>
+  </div>
 </div>
 <div class="tabs" id="tabs"></div>
 <div id="list-view"></div>
@@ -104,6 +120,7 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
   </div>
   <div class="detail-source" id="d-source"></div>
 </div>
+{ntfy_block}
 <div class="footer" id="footer"></div>
 <script>
 const CATS = ["全て","政治","経済","IT","社会","オピニオン"];
@@ -166,6 +183,12 @@ function showDetail(idx){{
 
 function backToList(){{document.getElementById("list-view").style.display="block";document.getElementById("detail-view").style.display="none";window.scrollTo(0,0);}}
 
+function shareUrl(){{
+  const url=location.href;
+  if(navigator.share){{navigator.share({{title:"Morning Read",url:url}});}}
+  else{{navigator.clipboard.writeText(url).then(()=>alert("URLをコピーしました")).catch(()=>prompt("このURLをコピーしてください:",url));}}
+}}
+
 document.getElementById("footer").textContent="Generated {ts} JST";
 renderTabs();renderList();
 </script>
@@ -193,18 +216,30 @@ def _safe_json(articles: List[Article]) -> str:
     # Escape </script> to prevent XSS via JSON injection
     return json.dumps(data, ensure_ascii=False).replace("</script>", "<\\/script>")
 
-def render_html(articles: List[Article], date_str: str) -> str:
+def render_html(articles: List[Article], date_str: str, ntfy_topic: str = "") -> str:
     ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ntfy_block = ""
+    if ntfy_topic:
+        ntfy_block = (
+            f'<div class="share-block">'
+            f'<div class="share-title">&#128276; プッシュ通知を受け取る</div>'
+            f'<div class="share-desc">ntfy アプリをインストールしてトピックを購読すると、毎日11時・22時に通知が届きます。</div>'
+            f'<div class="share-topic">トピック名: <code>{_html.escape(ntfy_topic)}</code></div>'
+            f'<a class="share-link" href="https://ntfy.sh/{_html.escape(ntfy_topic)}" target="_blank" rel="noopener">'
+            f'&#128279; ntfy.sh で購読する</a>'
+            f'</div>'
+        )
     return _TEMPLATE.format(
         date=date_str,
         data_json=_safe_json(articles),
         ts=ts,
+        ntfy_block=ntfy_block,
     )
 
-def write_html(articles: List[Article], docs_dir: Path = Path("docs")) -> tuple[Path, Path]:
+def write_html(articles: List[Article], docs_dir: Path = Path("docs"), ntfy_topic: str = "") -> tuple[Path, Path]:
     docs_dir.mkdir(parents=True, exist_ok=True)
     date_str = datetime.now().strftime("%Y-%m-%d")
-    content = render_html(articles, date_str)
+    content = render_html(articles, date_str, ntfy_topic=ntfy_topic)
     dated = docs_dir / f"morning-read-{date_str}.html"
     latest = docs_dir / "latest.html"
     dated.write_text(content, encoding="utf-8")
