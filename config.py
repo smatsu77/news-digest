@@ -38,6 +38,23 @@ class Article:
     translation_ja: str = ""      # full Japanese translation
     vocab: list = field(default_factory=list)  # difficult words [{word, definition}]
 
+@dataclass
+class Coverage:
+    region: str
+    name: str
+    title: str
+    link: str
+    summary_ja: str
+    perspective_ja: str
+    state_media: bool = False
+
+@dataclass
+class Comparison:
+    topic_en: str
+    topic_ja: str
+    analysis_ja: str
+    coverages: list = field(default_factory=list)  # List[Coverage]
+
 TIERS = ["wire", "public", "paper", "opinion", "state"]
 
 TIER_LABELS = {

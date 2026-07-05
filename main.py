@@ -17,6 +17,7 @@ from fetch import fetch_all
 from summarize import summarize_articles
 from render import write_html
 from notify import send_notification
+from compare import build_comparison
 
 def _git_push(docs_dir: Path) -> None:
     date_str = datetime.now().strftime("%Y-%m-%d")
@@ -45,16 +46,28 @@ def main() -> None:
     articles = summarize_articles(raw)
     logger.info(f"Summarized: {len(articles)} articles")
 
-    logger.info("=== 3/5 Rendering HTML ===")
+    logger.info("=== 3/6 Building media comparison ===")
+    comparison = None
+    try:
+        comparison = build_comparison(articles)
+        if comparison:
+            logger.info(f"Comparison built: {comparison.topic_en}")
+        else:
+            logger.info("Comparison skipped (insufficient coverage)")
+    except Exception as exc:
+        logger.warning(f"Comparison failed (non-fatal): {exc}")
+
+    logger.info("=== 4/6 Rendering HTML ===")
     docs_dir = Path(__file__).parent / "docs"
     ntfy_topic = get_env("NTFY_TOPIC", required=False) or ""
-    dated_path, latest_path = write_html(articles, docs_dir, ntfy_topic=ntfy_topic)
+    dated_path, latest_path = write_html(articles, docs_dir, ntfy_topic=ntfy_topic,
+                                         comparison=comparison)
     logger.info(f"HTML: {dated_path.name}, {latest_path.name}")
 
-    logger.info("=== 4/5 Git commit & push ===")
+    logger.info("=== 5/6 Git commit & push ===")
     _git_push(docs_dir)
 
-    logger.info("=== 5/5 ntfy notification ===")
+    logger.info("=== 6/6 ntfy notification ===")
     click_url = f"{public_base}/latest.html" if public_base else ""
     ok = send_notification(articles, click_url)
     if not ok:

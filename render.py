@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import List
-from config import Article, TIERS, TIER_LABELS, CATEGORIES
+from config import Article, Comparison, TIERS, TIER_LABELS, CATEGORIES
 
 _TEMPLATE = """\
 <!DOCTYPE html>
@@ -68,6 +68,22 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
 .vocab-item{{margin-bottom:.75rem}}
 .vocab-word{{font-weight:bold;color:var(--accent);font-size:.88rem;display:block}}
 .vocab-def{{font-size:.82rem;color:#ccc;line-height:1.6}}
+/* Focus section */
+.focus-section{{background:var(--card);border:1px solid var(--accent);border-radius:6px;
+               margin:.75rem 1rem;padding:1rem}}
+.focus-label{{font-size:.7rem;color:var(--accent);font-weight:bold;letter-spacing:.1em;margin-bottom:.3rem}}
+.focus-topic{{font-size:.95rem;font-weight:bold;line-height:1.4;margin-bottom:.75rem}}
+.focus-analysis{{font-size:.82rem;line-height:1.7;color:#ccc;margin-bottom:.75rem}}
+.cov-list{{display:flex;flex-direction:column;gap:.5rem}}
+.cov-card{{background:#111;border-radius:4px;padding:.6rem .75rem;border-left:3px solid var(--accent)}}
+.cov-card.state-media{{border-left-color:var(--danger)}}
+.cov-header{{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem}}
+.cov-region{{font-size:.65rem;color:var(--accent);font-weight:bold;background:rgba(200,169,110,.15);
+             padding:.1rem .4rem;border-radius:3px}}
+.cov-name{{font-size:.75rem;font-weight:bold;color:var(--text)}}
+.cov-summary{{font-size:.78rem;color:#ccc;line-height:1.5;margin-bottom:.2rem}}
+.cov-perspective{{font-size:.74rem;color:var(--muted);line-height:1.4;font-style:italic}}
+.cov-link{{font-size:.7rem;color:var(--accent);text-decoration:none}}
 /* Share */
 .share-btn{{display:inline-flex;align-items:center;gap:.3rem;background:none;
            border:1px solid var(--accent);color:var(--accent);border-radius:4px;
@@ -94,6 +110,7 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
     <button class="share-btn" onclick="shareUrl()">&#128279; 共有</button>
   </div>
 </div>
+{focus_block}
 <div class="tabs" id="tabs"></div>
 <div id="list-view"></div>
 <div id="detail-view">
@@ -216,7 +233,36 @@ def _safe_json(articles: List[Article]) -> str:
     # Escape </script> to prevent XSS via JSON injection
     return json.dumps(data, ensure_ascii=False).replace("</script>", "<\\/script>")
 
-def render_html(articles: List[Article], date_str: str, ntfy_topic: str = "") -> str:
+def _build_focus_block(comparison: "Comparison | None") -> str:
+    if not comparison:
+        return ""
+    cards = []
+    for c in comparison.coverages:
+        state_cls = " state-media" if c.state_media else ""
+        state_badge = ' <span style="color:var(--danger);font-size:.65rem">[国営]</span>' if c.state_media else ""
+        cards.append(
+            f'<div class="cov-card{state_cls}">'
+            f'<div class="cov-header">'
+            f'<span class="cov-region">{_html.escape(c.region)}</span>'
+            f'<span class="cov-name">{_html.escape(c.name)}{state_badge}</span>'
+            f'</div>'
+            f'<div class="cov-summary">{_html.escape(c.summary_ja)}</div>'
+            f'<div class="cov-perspective">{_html.escape(c.perspective_ja)}</div>'
+            f'<a class="cov-link" href="{_html.escape(c.link)}" target="_blank" rel="noopener">元記事 →</a>'
+            f'</div>'
+        )
+    return (
+        f'<div class="focus-section">'
+        f'<div class="focus-label">&#127919; 今日の焦点 — 5社の報道比較</div>'
+        f'<div class="focus-topic">{_html.escape(comparison.topic_ja)}</div>'
+        f'<div class="focus-analysis">{_html.escape(comparison.analysis_ja)}</div>'
+        f'<div class="cov-list">{"".join(cards)}</div>'
+        f'</div>'
+    )
+
+
+def render_html(articles: List[Article], date_str: str, ntfy_topic: str = "",
+                comparison: "Comparison | None" = None) -> str:
     ts = datetime.now().strftime("%Y-%m-%d %H:%M")
     ntfy_block = ""
     if ntfy_topic:
@@ -234,12 +280,14 @@ def render_html(articles: List[Article], date_str: str, ntfy_topic: str = "") ->
         data_json=_safe_json(articles),
         ts=ts,
         ntfy_block=ntfy_block,
+        focus_block=_build_focus_block(comparison),
     )
 
-def write_html(articles: List[Article], docs_dir: Path = Path("docs"), ntfy_topic: str = "") -> tuple[Path, Path]:
+def write_html(articles: List[Article], docs_dir: Path = Path("docs"), ntfy_topic: str = "",
+               comparison: "Comparison | None" = None) -> tuple[Path, Path]:
     docs_dir.mkdir(parents=True, exist_ok=True)
     date_str = datetime.now().strftime("%Y-%m-%d")
-    content = render_html(articles, date_str, ntfy_topic=ntfy_topic)
+    content = render_html(articles, date_str, ntfy_topic=ntfy_topic, comparison=comparison)
     dated = docs_dir / f"morning-read-{date_str}.html"
     latest = docs_dir / "latest.html"
     dated.write_text(content, encoding="utf-8")
