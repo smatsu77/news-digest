@@ -9,6 +9,7 @@ class Source:
     tier: str        # was: region
     url: str
     state_media: bool = False
+    fetch_full_text: bool = False  # True for free/open sites where full text is accessible
 
 @dataclass
 class RawArticle:
@@ -50,32 +51,37 @@ TIER_LABELS = {
 SOURCES: list[Source] = [
     # 通信社
     Source("Reuters",       "wire",   "https://news.google.com/rss/search?q=site:reuters.com+world&hl=en"),
-    Source("AP",            "wire",   "https://news.google.com/rss/search?q=site:apnews.com&hl=en"),
+    Source("AP",            "wire",   "https://feeds.apnews.com/apnews/topnews", fetch_full_text=True),
     Source("AFP",           "wire",   ""),  # No public RSS; graceful skip
     # 公共放送
-    Source("BBC",           "public", "https://feeds.bbci.co.uk/news/world/rss.xml"),
-    Source("Deutsche Welle","public", "https://rss.dw.com/rdf/rss-en-all"),
-    # 民間紙
+    Source("BBC World",     "public", "https://feeds.bbci.co.uk/news/world/rss.xml",  fetch_full_text=True),
+    Source("BBC UK",        "public", "https://feeds.bbci.co.uk/news/uk/rss.xml",     fetch_full_text=True),
+    Source("Deutsche Welle","public", "https://rss.dw.com/rdf/rss-en-all",            fetch_full_text=True),
+    Source("ABC News",      "public", "https://feeds.abcnews.com/abcnews/topstories",  fetch_full_text=True),
+    # 民間紙（無料・全文取得可）
+    Source("The Guardian",  "paper",  "https://www.theguardian.com/world/rss",        fetch_full_text=True),
+    Source("Al Jazeera",    "paper",  "https://www.aljazeera.com/xml/rss/all.xml",    fetch_full_text=True),
+    Source("The Hindu",     "paper",  "https://www.thehindu.com/news/international/feeder/default.rss", fetch_full_text=True),
+    Source("Indian Express","paper",  "https://indianexpress.com/feed/",              fetch_full_text=True),
+    Source("The Star",      "paper",  "https://news.google.com/rss/search?q=site:thestar.com&hl=en", fetch_full_text=True),
+    Source("O Globo",       "paper",  "https://news.google.com/rss/search?q=site:oglobo.globo.com/english&hl=en", fetch_full_text=True),
+    Source("Premium Times", "paper",  "https://www.premiumtimesng.com/feed",          fetch_full_text=True),
+    # 民間紙（有料・RSS抜粋のみ）
     Source("New York Times","paper",  "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
     Source("Wall Street Journal", "paper", "https://feeds.a.dj.com/rss/RSSWorldNews.xml"),
-    Source("The Guardian",  "paper",  "https://www.theguardian.com/world/rss"),
     Source("The Economist", "paper",  "https://www.economist.com/international/rss.xml"),
     Source("Le Monde",      "paper",  "https://www.lemonde.fr/en/rss/une.xml"),
-    Source("Al Jazeera",    "paper",  "https://www.aljazeera.com/xml/rss/all.xml"),
-    Source("Haaretz",       "paper",  "https://news.google.com/rss/search?q=site:haaretz.com&hl=en"),
     Source("The Straits Times", "paper", "https://www.straitstimes.com/rss.xml"),
-    Source("The Jakarta Post",  "paper", "https://news.google.com/rss/search?q=site:thejakartapost.com&hl=en"),
-    Source("The Hindu",     "paper",  "https://www.thehindu.com/news/international/feeder/default.rss"),
+    Source("Haaretz",       "paper",  "https://news.google.com/rss/search?q=site:haaretz.com&hl=en"),
     Source("Focus Taiwan",  "paper",  "https://news.google.com/rss/search?q=site:focustaiwan.tw&hl=en"),
-    Source("Folha de S.Paulo", "paper", "https://feeds.folha.uol.com.br/internacional/en/world/rss091.xml"),
-    Source("Premium Times", "paper",  "https://www.premiumtimesng.com/feed"),
     # 国営
-    Source("Xinhua/CGTN",   "state",  "https://www.cgtn.com/subscribe/rss/section/world.xml", state_media=True),
+    Source("Xinhua",        "state",  "https://english.news.cn/rss/world.xml", state_media=True),
+    Source("CGTN",          "state",  "https://www.cgtn.com/subscribe/rss/section/world.xml", state_media=True),
     Source("TASS/RT",       "state",  "https://tass.com/rss/v2.xml", state_media=True),
-    # オピニオン
-    Source("Project Syndicate", "opinion", "https://www.project-syndicate.org/rss"),
-    Source("Guardian Opinion",  "opinion", "https://www.theguardian.com/commentisfree/rss"),
-    Source("Foreign Affairs",   "opinion", "https://www.foreignaffairs.com/rss.xml"),
+    # オピニオン（全文取得）
+    Source("Project Syndicate", "opinion", "https://www.project-syndicate.org/rss",   fetch_full_text=True),
+    Source("Guardian Opinion",  "opinion", "https://www.theguardian.com/commentisfree/rss", fetch_full_text=True),
+    Source("Foreign Affairs",   "opinion", "https://www.foreignaffairs.com/rss.xml",  fetch_full_text=True),
 ]
 
 CATEGORIES = ["政治", "経済", "IT", "社会", "オピニオン"]

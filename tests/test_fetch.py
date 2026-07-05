@@ -74,14 +74,14 @@ def test_fetch_source_respects_max_items(mocker):
 def test_fetch_source_full_text_stored(mocker):
     mocker.patch("feedparser.parse", return_value=_make_feed())
     mocker.patch("fetch._fetch_full_text", return_value="Full article body text here.")
-    source = Source("Guardian Opinion", "opinion", "https://example.com/rss.xml")
+    source = Source("BBC World", "public", "https://example.com/rss.xml", fetch_full_text=True)
     result = fetch_source(source)
     assert result[0].full_text == "Full article body text here."
 
-def test_fetch_source_no_full_text_for_non_opinion(mocker):
+def test_fetch_source_no_full_text_when_flag_false(mocker):
     mocker.patch("feedparser.parse", return_value=_make_feed())
-    mocker.patch("fetch._fetch_full_text", return_value="Should not be called")
-    source = Source("BBC", "public", "https://example.com/rss.xml")
+    mocker.patch("fetch._fetch_full_text", return_value="Should not be used")
+    source = Source("NYT", "paper", "https://example.com/rss.xml", fetch_full_text=False)
     result = fetch_source(source)
     assert result[0].full_text == ""
 

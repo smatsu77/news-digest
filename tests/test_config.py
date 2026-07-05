@@ -16,9 +16,9 @@ def test_sources_have_required_fields():
 def test_state_media_sources():
     state_media = [s for s in SOURCES if s.state_media]
     names = {s.name for s in state_media}
-    assert "Xinhua/CGTN" in names
     assert "TASS/RT" in names
-    bbc = next(s for s in SOURCES if s.name == "BBC")
+    assert any("Xinhua" in n or "CGTN" in n for n in names)
+    bbc = next(s for s in SOURCES if "BBC" in s.name)
     assert not bbc.state_media
 
 def test_classify_category_politics():

@@ -55,8 +55,7 @@ def fetch_source(source: Source) -> List[RawArticle]:
             if not title:
                 continue
             link = entry.get("link", "")
-            # Full-text fetch only for opinion tier (free sites); news sources are mostly paywalled
-            full_text = _fetch_full_text(link) if source.tier == "opinion" else ""
+            full_text = _fetch_full_text(link) if source.fetch_full_text else ""
             if full_text:
                 logger.info(f"[{source.name}] Full text fetched ({len(full_text)} chars): {title[:40]}")
             articles.append(RawArticle(
