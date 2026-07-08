@@ -80,6 +80,22 @@ def _fetch_outlet_coverage(query: str, outlet: dict) -> Optional[dict]:
         return None
 
 
+def _extract_json(text: str) -> str:
+    """マークダウンのコードブロックを除去してJSONを抽出する。"""
+    text = text.strip()
+    # ```json ... ``` または ``` ... ``` を除去
+    if text.startswith("```"):
+        lines = text.split("\n")
+        lines = [l for l in lines if not l.strip().startswith("```")]
+        text = "\n".join(lines).strip()
+    # 先頭の { から末尾の } まで抽出
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1:
+        return text[start:end + 1]
+    return text
+
+
 def _generate_comparison(query: str, raw_coverages: List[dict]) -> Optional[Comparison]:
     """各社の記事をClaudeに渡し、報道差異を日本語でまとめる。"""
     client = anthropic.Anthropic(api_key=get_env("ANTHROPIC_API_KEY"))
@@ -90,29 +106,33 @@ def _generate_comparison(query: str, raw_coverages: List[dict]) -> Optional[Comp
         sections.append(
             f"[{c['name']} / {c['region']}{state_note}]\n"
             f"Title: {c['title']}\n"
-            f"Content: {c['content'][:1500]}"
+            f"Content: {c['content'][:1000]}"  # 1500→1000に削減してトークン節約
         )
 
     prompt = (
         "You are a media analyst. Compare how these regional news outlets cover the same story.\n"
+        "Output ONLY valid JSON with NO markdown fences, NO explanation outside the JSON.\n\n"
         f"Story topic: {query}\n\n"
         + "\n\n---\n\n".join(sections)
-        + "\n\nOutput ONLY valid JSON:\n"
+        + "\n\nRequired JSON format:\n"
         '{"topic_en":"<story topic in English, max 100 chars>",'
         '"topic_ja":"<story topic in Japanese>",'
-        '"analysis_ja":"<300-400字で各社の報道の差異・強調点・省略点を比較分析>",'
+        '"analysis_ja":"<300字程度で各社の報道差異・強調点・視点の違いを比較分析>",'
         '"coverages":['
-        '{"region":"<地域>","name":"<outlet>","summary_ja":"<その社の報道を2文で要約>","perspective_ja":"<その社特有の視点・フレーミングを1文で>"}'
+        '{"region":"<地域>","name":"<outlet name>","summary_ja":"<その社の報道を2文で要約>","perspective_ja":"<その社特有の視点を1文で>"}'
         "]}"
     )
 
     try:
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=2000,
+            max_tokens=3000,
             messages=[{"role": "user", "content": prompt}],
         )
-        data = json.loads(resp.content[0].text)
+        raw_text = resp.content[0].text
+        logger.debug(f"[compare] raw response (first 200): {raw_text[:200]}")
+        cleaned = _extract_json(raw_text)
+        data = json.loads(cleaned)
         coverages = []
         for i, c in enumerate(data.get("coverages", [])):
             raw = raw_coverages[i] if i < len(raw_coverages) else {}
