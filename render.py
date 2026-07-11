@@ -110,13 +110,12 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
     <button class="share-btn" onclick="shareUrl()">&#128279; 共有</button>
   </div>
 </div>
-{focus_block}
 <div class="tabs" id="tabs"></div>
 <div id="list-view"></div>
 <div id="detail-view">
   <div class="back-btn" onclick="backToList()">&#8592; 戻る</div>
   <a class="orig-link" id="d-link" href="#" target="_blank" rel="noopener">&#128279; 元記事を開く</a>
-  <div class="state-badge" id="d-state" style="display:none">⚠ 国営系メディア — 主張は中立的事実として扱わない</div>
+  <div class="state-badge" id="d-state" style="display:none">&#9888; 国営系メディア — 主張は中立的事実として扱わない</div>
   <div class="detail-title-ja" id="d-title-ja"></div>
   <div class="detail-summ-ja" id="d-summ-ja"></div>
   <hr class="divider">
@@ -142,9 +141,20 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
 <script>
 const CATS = ["全て","政治","経済","IT","社会","オピニオン"];
 const DATA = {data_json};
+const FOCUS = {focus_json};
 let curCat = "全て";
 
-function esc(s){{return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}}
+function esc(s){{return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}}
+
+function buildFocusHtml(){{
+  if(!FOCUS)return"";
+  const cards=FOCUS.coverages.map(c=>{{
+    const sc=c.state_media?" state-media":"";
+    const sb=c.state_media?` <span style="color:var(--danger);font-size:.65rem">[国営]</span>`:"";
+    return `<div class="cov-card${{sc}}"><div class="cov-header"><span class="cov-region">${{esc(c.region)}}</span><span class="cov-name">${{esc(c.name)}}${{sb}}</span></div><div class="cov-summary">${{esc(c.summary_ja)}}</div><div class="cov-perspective">${{esc(c.perspective_ja)}}</div><a class="cov-link" href="${{esc(c.link)}}" target="_blank" rel="noopener">元記事 →</a></div>`;
+  }}).join("");
+  return `<div class="focus-section"><div class="focus-label">&#127919; 今日の焦点 — 5社の報道比較</div><div class="focus-topic">${{esc(FOCUS.topic_ja)}}</div><div class="focus-analysis">${{esc(FOCUS.analysis_ja)}}</div><div class="cov-list">${{cards}}</div></div>`;
+}}
 
 function renderTabs(){{
   const el=document.getElementById("tabs");
@@ -158,8 +168,9 @@ function filteredArts(){{
 function renderList(){{
   const arts=filteredArts();
   const el=document.getElementById("list-view");
-  if(!arts.length){{el.innerHTML='<p style="padding:1rem;color:var(--muted)">記事なし</p>';return;}}
-  el.innerHTML=arts.map((a,i)=>{{
+  let html=(curCat==="政治"||curCat==="社会")?buildFocusHtml():"";
+  if(!arts.length){{el.innerHTML=html+'<p style="padding:1rem;color:var(--muted)">記事なし</p>';return;}}
+  html+=arts.map((a,i)=>{{
     const sm=a.state_media;
     return `<div class="art-item${{sm?" state":""}}" onclick="showDetail(${{i}})">
       <span class="bullet${{sm?" st":""}}">${{sm?"[!]":"•"}}</span>
@@ -167,12 +178,21 @@ function renderList(){{
       <span class="art-src">${{esc(a.source)}}</span>
     </div>`;
   }}).join("");
+  el.innerHTML=html;
 }}
 
-function setCat(cat){{curCat=cat;renderTabs();renderList();document.getElementById("list-view").style.display="block";document.getElementById("detail-view").style.display="none";}}
+function setCat(cat){{
+  curCat=cat;
+  history.pushState({{view:"list",cat:cat}},"","?tab="+encodeURIComponent(cat));
+  renderTabs();renderList();
+  document.getElementById("list-view").style.display="block";
+  document.getElementById("detail-view").style.display="none";
+  window.scrollTo(0,0);
+}}
 
-function showDetail(idx){{
+function showDetailInternal(idx){{
   const a=filteredArts()[idx];
+  if(!a)return;
   document.getElementById("d-link").href=a.link;
   document.getElementById("d-state").style.display=a.state_media?"block":"none";
   document.getElementById("d-title-ja").textContent=a.title_ja;
@@ -198,7 +218,26 @@ function showDetail(idx){{
   window.scrollTo(0,0);
 }}
 
-function backToList(){{document.getElementById("list-view").style.display="block";document.getElementById("detail-view").style.display="none";window.scrollTo(0,0);}}
+function showDetail(idx){{
+  history.pushState({{view:"detail",cat:curCat,idx:idx}},"","?tab="+encodeURIComponent(curCat)+"&art="+idx);
+  showDetailInternal(idx);
+}}
+
+function backToList(){{history.back();}}
+
+window.addEventListener("popstate",function(e){{
+  const s=e.state||{{view:"list",cat:"全て"}};
+  curCat=s.cat||"全て";
+  renderTabs();
+  if(s.view==="detail"){{
+    showDetailInternal(s.idx);
+  }}else{{
+    renderList();
+    document.getElementById("list-view").style.display="block";
+    document.getElementById("detail-view").style.display="none";
+    window.scrollTo(0,0);
+  }}
+}});
 
 function shareUrl(){{
   const url=location.href;
@@ -206,11 +245,18 @@ function shareUrl(){{
   else{{navigator.clipboard.writeText(url).then(()=>alert("URLをコピーしました")).catch(()=>prompt("このURLをコピーしてください:",url));}}
 }}
 
-document.getElementById("footer").textContent="Generated {ts} JST";
-renderTabs();renderList();
+(function init(){{
+  const p=new URLSearchParams(location.search);
+  const tab=p.get("tab")||"全て";
+  curCat=tab;
+  history.replaceState({{view:"list",cat:tab}},"",location.href);
+  document.getElementById("footer").textContent="Generated {ts} JST";
+  renderTabs();renderList();
+}})();
 </script>
 </body>
 </html>"""
+
 
 def _safe_json(articles: List[Article]) -> str:
     data = [
@@ -230,35 +276,30 @@ def _safe_json(articles: List[Article]) -> str:
         }
         for a in articles
     ]
-    # Escape </script> to prevent XSS via JSON injection
     return json.dumps(data, ensure_ascii=False).replace("</script>", "<\\/script>")
 
-def _build_focus_block(comparison: "Comparison | None") -> str:
+
+def _focus_json(comparison: "Comparison | None") -> str:
     if not comparison:
-        return ""
-    cards = []
-    for c in comparison.coverages:
-        state_cls = " state-media" if c.state_media else ""
-        state_badge = ' <span style="color:var(--danger);font-size:.65rem">[国営]</span>' if c.state_media else ""
-        cards.append(
-            f'<div class="cov-card{state_cls}">'
-            f'<div class="cov-header">'
-            f'<span class="cov-region">{_html.escape(c.region)}</span>'
-            f'<span class="cov-name">{_html.escape(c.name)}{state_badge}</span>'
-            f'</div>'
-            f'<div class="cov-summary">{_html.escape(c.summary_ja)}</div>'
-            f'<div class="cov-perspective">{_html.escape(c.perspective_ja)}</div>'
-            f'<a class="cov-link" href="{_html.escape(c.link)}" target="_blank" rel="noopener">元記事 →</a>'
-            f'</div>'
-        )
-    return (
-        f'<div class="focus-section">'
-        f'<div class="focus-label">&#127919; 今日の焦点 — 5社の報道比較</div>'
-        f'<div class="focus-topic">{_html.escape(comparison.topic_ja)}</div>'
-        f'<div class="focus-analysis">{_html.escape(comparison.analysis_ja)}</div>'
-        f'<div class="cov-list">{"".join(cards)}</div>'
-        f'</div>'
-    )
+        return "null"
+    data = {
+        "topic_en": comparison.topic_en,
+        "topic_ja": comparison.topic_ja,
+        "analysis_ja": comparison.analysis_ja,
+        "coverages": [
+            {
+                "region": c.region,
+                "name": c.name,
+                "title": c.title,
+                "link": c.link,
+                "summary_ja": c.summary_ja,
+                "perspective_ja": c.perspective_ja,
+                "state_media": c.state_media,
+            }
+            for c in comparison.coverages
+        ],
+    }
+    return json.dumps(data, ensure_ascii=False).replace("</script>", "<\\/script>")
 
 
 def render_html(articles: List[Article], date_str: str, ntfy_topic: str = "",
@@ -269,7 +310,7 @@ def render_html(articles: List[Article], date_str: str, ntfy_topic: str = "",
         ntfy_block = (
             f'<div class="share-block">'
             f'<div class="share-title">&#128276; プッシュ通知を受け取る</div>'
-            f'<div class="share-desc">ntfy アプリをインストールしてトピックを購読すると、毎日11時・22時に通知が届きます。</div>'
+            f'<div class="share-desc">ntfy アプリをインストールしてトピックを購読すると、毎日22時に通知が届きます。</div>'
             f'<div class="share-topic">トピック名: <code>{_html.escape(ntfy_topic)}</code></div>'
             f'<a class="share-link" href="https://ntfy.sh/{_html.escape(ntfy_topic)}" target="_blank" rel="noopener">'
             f'&#128279; ntfy.sh で購読する</a>'
@@ -278,9 +319,9 @@ def render_html(articles: List[Article], date_str: str, ntfy_topic: str = "",
     return _TEMPLATE.format(
         date=date_str,
         data_json=_safe_json(articles),
+        focus_json=_focus_json(comparison),
         ts=ts,
         ntfy_block=ntfy_block,
-        focus_block=_build_focus_block(comparison),
     )
 
 def write_html(articles: List[Article], docs_dir: Path = Path("docs"), ntfy_topic: str = "",
