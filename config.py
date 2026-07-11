@@ -74,14 +74,14 @@ SOURCES: list[Source] = [
     Source("BBC World",     "public", "https://feeds.bbci.co.uk/news/world/rss.xml",  fetch_full_text=True),
     Source("BBC UK",        "public", "https://feeds.bbci.co.uk/news/uk/rss.xml",     fetch_full_text=True),
     Source("Deutsche Welle","public", "https://rss.dw.com/rdf/rss-en-all",            fetch_full_text=True),
-    Source("ABC News",      "public", "https://feeds.abcnews.com/abcnews/topstories",  fetch_full_text=True),
+    Source("ABC News",      "public", "https://feeds.abcnews.com/abcnews/topstories"),
     # 民間紙（無料・全文取得可）
     Source("The Guardian",  "paper",  "https://www.theguardian.com/world/rss",        fetch_full_text=True),
     Source("Al Jazeera",    "paper",  "https://www.aljazeera.com/xml/rss/all.xml",    fetch_full_text=True),
     Source("The Hindu",     "paper",  "https://www.thehindu.com/news/international/feeder/default.rss", fetch_full_text=True),
-    Source("Indian Express","paper",  "https://indianexpress.com/feed/",              fetch_full_text=True),
-    Source("The Star",      "paper",  "https://news.google.com/rss/search?q=site:thestar.com&hl=en", fetch_full_text=True),
-    Source("O Globo",       "paper",  "https://news.google.com/rss/search?q=site:oglobo.globo.com/english&hl=en", fetch_full_text=True),
+    Source("Indian Express","paper",  "https://indianexpress.com/feed/"),
+    Source("The Star",      "paper",  "https://news.google.com/rss/search?q=site:thestar.com&hl=en"),
+    Source("O Globo",       "paper",  "https://news.google.com/rss/search?q=site:oglobo.globo.com/english&hl=en"),
     Source("Premium Times", "paper",  "https://www.premiumtimesng.com/feed",          fetch_full_text=True),
     # 民間紙（有料・RSS抜粋のみ）
     Source("New York Times","paper",  "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
