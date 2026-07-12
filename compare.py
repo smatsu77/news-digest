@@ -21,7 +21,7 @@ REGIONAL_OUTLETS = [
     {"region": "東アジア",   "name": "Xinhua",     "site": "english.news.cn",     "state": True},
 ]
 
-MIN_COVERAGES = 3  # 最低3社揃わなければスキップ
+MIN_COVERAGES = 2  # 最低2社揃わなければスキップ
 
 
 def _pick_top_story(articles: List[Article]) -> Optional[str]:
@@ -54,23 +54,39 @@ def _pick_top_story(articles: List[Article]) -> Optional[str]:
 
 def _fetch_outlet_coverage(query: str, outlet: dict) -> Optional[dict]:
     """Google News でクエリ×特定サイトを検索し、記事タイトル・全文・リンクを返す。"""
-    encoded = urllib.parse.quote(f"{query} site:{outlet['site']}")
-    rss_url = f"https://news.google.com/rss/search?q={encoded}&hl=en&gl=US&ceid=US:en"
+    # フル検索 → 短縮フォールバック（3語）の順で試みる
+    short_query = " ".join(query.split()[:3])
+    candidates = [query, short_query] if query != short_query else [query]
+
+    entry = None
+    for q in candidates:
+        encoded = urllib.parse.quote(f"{q} site:{outlet['site']}")
+        rss_url = f"https://news.google.com/rss/search?q={encoded}&hl=en&gl=US&ceid=US:en"
+        try:
+            feed = feedparser.parse(rss_url)
+            if feed.entries:
+                entry = feed.entries[0]
+                break
+        except Exception as exc:
+            logger.warning(f"[compare] RSS fetch failed for {outlet['name']}: {exc}")
+
+    if not entry:
+        logger.info(f"[compare] no results for {outlet['name']}")
+        return None
+
     try:
-        feed = feedparser.parse(rss_url)
-        if not feed.entries:
-            logger.info(f"[compare] no results for {outlet['name']}")
-            return None
-        entry = feed.entries[0]
         link = entry.get("link", "")
         full_text = _fetch_full_text(link)
-        content = full_text if full_text else _strip_html(entry.get("summary", ""))[:800]
+        summary = _strip_html(entry.get("summary", ""))[:800]
+        title = entry.get("title", "").strip()
+        # コンテンツ: 全文 > RSS要約 > タイトルのみ（最低限の情報で続行）
+        content = full_text or summary or title
         if not content:
             return None
         return {
             "region": outlet["region"],
             "name": outlet["name"],
-            "title": entry.get("title", "").strip(),
+            "title": title,
             "link": link,
             "content": content,
             "state_media": outlet["state"],
