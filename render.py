@@ -62,8 +62,6 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
                 letter-spacing:.05em;margin-bottom:.5rem;margin-top:.25rem}}
 .detail-fulltext-en{{font-size:.82rem;line-height:1.8;color:var(--muted);
                      white-space:pre-wrap;word-break:break-word}}
-.detail-translation{{font-size:.88rem;line-height:1.8;color:#ccc;
-                     white-space:pre-wrap;word-break:break-word}}
 /* Vocab */
 .vocab-item{{margin-bottom:.75rem}}
 .vocab-word{{font-weight:bold;color:var(--accent);font-size:.88rem;display:block}}
@@ -125,9 +123,6 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
     <hr class="divider">
     <div class="section-label">全文（英語）</div>
     <div class="detail-fulltext-en" id="d-fulltext-en"></div>
-    <hr class="divider">
-    <div class="section-label">日本語訳（全文）</div>
-    <div class="detail-translation" id="d-translation-ja"></div>
   </div>
   <div id="d-vocab-section" style="display:none">
     <hr class="divider">
@@ -202,7 +197,6 @@ function showDetailInternal(idx){{
   const fts=document.getElementById("d-fulltext-section");
   if(a.full_text){{
     document.getElementById("d-fulltext-en").textContent=a.full_text;
-    document.getElementById("d-translation-ja").textContent=a.translation_ja||"";
     fts.style.display="block";
   }}else{{fts.style.display="none";}}
   const vs=document.getElementById("d-vocab-section");

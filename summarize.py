@@ -42,7 +42,6 @@ def _build_prompt(raw: RawArticle) -> str:
             f'"summary_en":"<2-3 sentence English summary>",'
             f'"title_ja":"<Japanese title>",'
             f'"summary_ja":"<2-3 sentence Japanese summary>",'
-            f'"translation_ja":"<Complete Japanese translation of the full article above>",'
             f'"vocab":[{{"word":"<English word>","definition":"<Japanese explanation of meaning and usage, 1-2 sentences>"}}]}}\n\n'
             f"For vocab: extract 3-7 words that are TOEIC 800+ level (advanced vocabulary, technical terms, or idiomatic expressions). "
             f"Do NOT include common words."
@@ -71,7 +70,7 @@ def summarize_articles(
         if not raw.title:
             continue
         category = "オピニオン" if raw.tier == "opinion" else classify_category(raw.title, raw.raw_summary)
-        max_tok = 4000 if raw.full_text else 700
+        max_tok = 1500 if raw.full_text else 700
         try:
             response = client.messages.create(
                 model="claude-haiku-4-5",
