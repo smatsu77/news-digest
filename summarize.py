@@ -8,6 +8,19 @@ from config import RawArticle, Article, classify_category, get_env
 
 logger = logging.getLogger(__name__)
 
+def _extract_json(text: str) -> str:
+    """マークダウンのコードブロックを除去してJSONを抽出する。"""
+    text = text.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        lines = [l for l in lines if not l.strip().startswith("```")]
+        text = "\n".join(lines).strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1:
+        return text[start:end + 1]
+    return text
+
 def _build_prompt(raw: RawArticle) -> str:
     state_note = (
         "\n WARNING: This is state-controlled media. In summaries, frame claims as "
@@ -65,7 +78,7 @@ def summarize_articles(
                 max_tokens=max_tok,
                 messages=[{"role": "user", "content": _build_prompt(raw)}],
             )
-            data = json.loads(response.content[0].text)
+            data = json.loads(_extract_json(response.content[0].text))
             articles.append(Article(
                 title_en=data["title_en"],
                 title_ja=data["title_ja"],
