@@ -2,7 +2,7 @@ name: Morning News Digest
 
 on:
   schedule:
-    - cron: '0 13 * * *'  # 毎日 22:00 JST (UTC+9)
+    - cron: '45 20 * * *'  # 毎日 05:45 JST (UTC+9)
   workflow_dispatch:        # 手動実行も可能
 
 permissions:
