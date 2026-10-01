@@ -54,8 +54,8 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
 .detail-title-ja{{font-size:1rem;font-weight:bold;line-height:1.5;margin-bottom:.75rem}}
 .detail-summ-ja{{font-size:.88rem;line-height:1.7;color:#ccc;margin-bottom:1.25rem}}
 .divider{{border:none;border-top:1px solid var(--border);margin:1rem 0}}
-.detail-title-en{{font-size:.9rem;font-weight:bold;line-height:1.4;color:#bbb;margin-bottom:.5rem}}
-.detail-summ-en{{font-size:.82rem;line-height:1.6;color:var(--muted)}}
+.detail-title-en{{font-size:1rem;font-weight:bold;line-height:1.5;color:var(--text);margin-bottom:.75rem}}
+.detail-summ-en{{font-size:.88rem;line-height:1.7;color:#ccc;margin-bottom:1rem}}
 .detail-source{{font-size:.72rem;color:var(--muted);margin-top:.75rem}}
 /* Full text sections */
 .section-label{{font-size:.78rem;color:var(--accent);font-weight:bold;
@@ -114,9 +114,6 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
   <div class="back-btn" onclick="backToList()">&#8592; 戻る</div>
   <a class="orig-link" id="d-link" href="#" target="_blank" rel="noopener">&#128279; 元記事を開く</a>
   <div class="state-badge" id="d-state" style="display:none">&#9888; 国営系メディア — 主張は中立的事実として扱わない</div>
-  <div class="detail-title-ja" id="d-title-ja"></div>
-  <div class="detail-summ-ja" id="d-summ-ja"></div>
-  <hr class="divider">
   <div class="detail-title-en" id="d-title-en"></div>
   <div class="detail-summ-en" id="d-summ-en"></div>
   <div id="d-fulltext-section" style="display:none">
@@ -169,7 +166,7 @@ function renderList(){{
     const sm=a.state_media;
     return `<div class="art-item${{sm?" state":""}}" onclick="showDetail(${{i}})">
       <span class="bullet${{sm?" st":""}}">${{sm?"[!]":"•"}}</span>
-      <span class="art-hed">${{esc(a.title_ja)}}</span>
+      <span class="art-hed">${{esc(a.title_en)}}</span>
       <span class="art-src">${{esc(a.source)}}</span>
     </div>`;
   }}).join("");
@@ -190,8 +187,6 @@ function showDetailInternal(idx){{
   if(!a)return;
   document.getElementById("d-link").href=a.link;
   document.getElementById("d-state").style.display=a.state_media?"block":"none";
-  document.getElementById("d-title-ja").textContent=a.title_ja;
-  document.getElementById("d-summ-ja").textContent=a.summary_ja;
   document.getElementById("d-title-en").textContent=a.title_en;
   document.getElementById("d-summ-en").textContent=a.summary_en;
   const fts=document.getElementById("d-fulltext-section");

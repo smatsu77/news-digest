@@ -21,43 +21,14 @@ def _extract_json(text: str) -> str:
         return text[start:end + 1]
     return text
 
-def _build_prompt(raw: RawArticle) -> str:
-    state_note = (
-        "\n WARNING: This is state-controlled media. In summaries, frame claims as "
-        "'[source] reports that ...' rather than neutral fact."
-    ) if raw.state_media else ""
-    opinion_note = (
-        "\n NOTE: This is an opinion/editorial piece. Summarize the author's main argument and perspective."
-    ) if raw.tier == "opinion" else ""
-
-    if raw.full_text:
-        content = raw.full_text[:5000]
-        return (
-            f"You are a bilingual news editor. Output ONLY valid JSON, no markdown fences.\n\n"
-            f"Source: {raw.source} (tier: {raw.tier}){state_note}{opinion_note}\n"
-            f"Title: {raw.title}\n"
-            f"Full article:\n{content}\n\n"
-            f"Required JSON (all fields required):\n"
-            f'{{"title_en":"<clean English title, max 120 chars>",'
-            f'"summary_en":"<2-3 sentence English summary>",'
-            f'"title_ja":"<Japanese title>",'
-            f'"summary_ja":"<2-3 sentence Japanese summary>",'
-            f'"vocab":[{{"word":"<English word>","definition":"<Japanese explanation of meaning and usage, 1-2 sentences>"}}]}}\n\n'
-            f"For vocab: extract 3-7 words that are TOEIC 800+ level (advanced vocabulary, technical terms, or idiomatic expressions). "
-            f"Do NOT include common words."
-        )
-    else:
-        return (
-            f"You are a bilingual news editor. Output ONLY valid JSON, no markdown fences.\n\n"
-            f"Source: {raw.source} (tier: {raw.tier}){state_note}{opinion_note}\n"
-            f"Title: {raw.title}\n"
-            f"Excerpt: {raw.raw_summary[:600]}\n\n"
-            f"Required JSON:\n"
-            f'{{"title_en":"<clean English title, max 120 chars>",'
-            f'"summary_en":"<2-3 sentence English summary>",'
-            f'"title_ja":"<Japanese title>",'
-            f'"summary_ja":"<2-3 sentence Japanese summary>"}}'
-        )
+def _build_vocab_prompt(raw: RawArticle) -> str:
+    content = raw.full_text[:2500]
+    return (
+        f"Extract 3-5 advanced vocabulary words (TOEIC 800+ level) from this article.\n"
+        f"Output ONLY valid JSON, no markdown fences:\n"
+        f'{{"vocab":[{{"word":"<English word>","definition":"<Japanese explanation of meaning and usage, 1-2 sentences>"}}]}}\n\n'
+        f"Article:\n{content}"
+    )
 
 def summarize_articles(
     raw_articles: List[RawArticle],
@@ -70,31 +41,9 @@ def summarize_articles(
         if not raw.title:
             continue
         category = "オピニオン" if raw.tier == "opinion" else classify_category(raw.title, raw.raw_summary)
-        max_tok = 1500 if raw.full_text else 700
-        try:
-            response = client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=max_tok,
-                messages=[{"role": "user", "content": _build_prompt(raw)}],
-            )
-            data = json.loads(_extract_json(response.content[0].text))
-            articles.append(Article(
-                title_en=data["title_en"],
-                title_ja=data["title_ja"],
-                summary_en=data["summary_en"],
-                summary_ja=data["summary_ja"],
-                source=raw.source,
-                tier=raw.tier,
-                link=raw.link,
-                state_media=raw.state_media,
-                category=category,
-                published=raw.published,
-                full_text=raw.full_text,
-                translation_ja=data.get("translation_ja", ""),
-                vocab=data.get("vocab", []),
-            ))
-        except Exception as exc:
-            logger.warning(f"Summarize failed for '{raw.title[:60]}': {exc}")
+
+        # 全文なし記事: APIコール不要、RSSデータをそのまま使用
+        if not raw.full_text:
             articles.append(Article(
                 title_en=raw.title,
                 title_ja=raw.title,
@@ -106,10 +55,40 @@ def summarize_articles(
                 state_media=raw.state_media,
                 category=category,
                 published=raw.published,
-                full_text=raw.full_text,
+                full_text="",
                 translation_ja="",
                 vocab=[],
             ))
+            continue
+
+        # 全文あり記事: 単語抽出のみ
+        vocab = []
+        try:
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=600,
+                messages=[{"role": "user", "content": _build_vocab_prompt(raw)}],
+            )
+            data = json.loads(_extract_json(response.content[0].text))
+            vocab = data.get("vocab", [])
+        except Exception as exc:
+            logger.warning(f"Vocab extraction failed for '{raw.title[:60]}': {exc}")
+
+        articles.append(Article(
+            title_en=raw.title,
+            title_ja=raw.title,
+            summary_en=raw.raw_summary[:300],
+            summary_ja=raw.raw_summary[:300],
+            source=raw.source,
+            tier=raw.tier,
+            link=raw.link,
+            state_media=raw.state_media,
+            category=category,
+            published=raw.published,
+            full_text=raw.full_text,
+            translation_ja="",
+            vocab=vocab,
+        ))
         time.sleep(rate_limit_delay)
 
     return articles
