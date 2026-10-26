@@ -126,11 +126,6 @@ body{{background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic P
     <div class="section-label">全文（英語）</div>
     <div class="detail-fulltext-en" id="d-fulltext-en"></div>
   </div>
-  <div id="d-vocab-section" style="display:none">
-    <hr class="divider">
-    <div class="section-label">難単語（TOEIC 800+）</div>
-    <div id="d-vocab-list"></div>
-  </div>
   <div class="detail-source" id="d-source"></div>
 </div>
 {ntfy_block}
@@ -201,13 +196,6 @@ function showDetailInternal(idx){{
     document.getElementById("d-fulltext-en").textContent=a.full_text;
     fts.style.display="block";
   }}else{{fts.style.display="none";}}
-  const vs=document.getElementById("d-vocab-section");
-  if(a.vocab&&a.vocab.length){{
-    document.getElementById("d-vocab-list").innerHTML=a.vocab.map(v=>
-      `<div class="vocab-item"><span class="vocab-word">${{esc(v.word)}}</span><span class="vocab-def">${{esc(v.definition)}}</span></div>`
-    ).join("");
-    vs.style.display="block";
-  }}else{{vs.style.display="none";}}
   document.getElementById("d-source").textContent=a.source+" / "+a.tier;
   document.getElementById("list-view").style.display="none";
   document.getElementById("detail-view").style.display="block";

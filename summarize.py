@@ -38,10 +38,7 @@ def _build_prompt(raw: RawArticle) -> str:
             f"Title: {raw.title}\n"
             f"Article:\n{content}\n\n"
             f"Required JSON:\n"
-            f'{{"title_ja":"<Japanese title>",'
-            f'"summary_ja":"<2-3 sentence Japanese summary>",'
-            f'"vocab":[{{"word":"<English word>","definition":"<Japanese explanation, 1-2 sentences>"}}]}}\n\n'
-            f"For vocab: extract 3-5 TOEIC 800+ level words. Do NOT include common words."
+            f'{{"title_ja":"<Japanese title>","summary_ja":"<2-3 sentence Japanese summary>"}}'
         )
     else:
         return (
@@ -64,7 +61,7 @@ def summarize_articles(
         if not raw.title:
             continue
         category = "オピニオン" if raw.tier == "opinion" else classify_category(raw.title, raw.raw_summary)
-        max_tok = 800 if raw.full_text else 300
+        max_tok = 300
         try:
             response = client.messages.create(
                 model="claude-haiku-4-5-20251001",
@@ -85,7 +82,7 @@ def summarize_articles(
                 published=raw.published,
                 full_text=raw.full_text,
                 translation_ja="",
-                vocab=data.get("vocab", []),
+                vocab=[],
             ))
         except Exception as exc:
             logger.warning(f"Summarize failed for '{raw.title[:60]}': {exc}")
